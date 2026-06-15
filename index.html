@@ -27,7 +27,7 @@ a{color:#C8A86B}
 .sbtn-main:hover{background:#D4B478}
 
 /* App Layout */
-#app{display:none;height:100vh;overflow:hidden}
+#app{height:100vh;overflow:hidden}
 .layout{display:flex;height:100%;direction:rtl}
 
 /* Sidebar */
@@ -128,26 +128,6 @@ a{color:#C8A86B}
 </head>
 <body>
 
-<!-- ═══ SETUP SCREEN ═══ -->
-<div id="setup">
-  <div class="sbox">
-    <div class="stitle">🏢 NOS AI Assistant</div>
-    <div class="ssub">المساعد الذكي لنيشونز أوف سكاي<br>أدخل بيانات الإعداد للبدء</div>
-
-    <label class="slabel">رابط الـ AI Worker *</label>
-    <input class="sinput" id="su-url" type="text" placeholder="https://nos-ai.yourname.workers.dev" />
-    <div class="sinfo">
-      أنشئ <a href="https://workers.cloudflare.com" target="_blank">Cloudflare Worker</a> مجاني وضع رابطه هنا.<br>
-      التعليمات الكاملة في ملف <strong style="color:#C8A86B;">README.md</strong> على GitHub.
-    </div>
-
-    <button class="sbtn-main" onclick="saveSetup()">ابدأ ←</button>
-
-    <div style="margin-top:14px;padding-top:14px;border-top:1px solid #2A4060;font-size:11px;color:#3A5A7A;direction:rtl;line-height:1.8">
-      ⚡ مجاني تماماً: Cloudflare Worker (100k طلب/يوم) + Groq Llama 3.3 (6000 طلب/يوم)
-    </div>
-  </div>
-</div>
 
 <!-- ═══ MAIN APP ═══ -->
 <div id="app">
@@ -224,8 +204,6 @@ function init(){
   WORKER_URL = localStorage.getItem('nos-worker-url') || DEFAULT_WORKER;
   KB   = JSON.parse(localStorage.getItem('nos-kb')   || '[]');
   MSGS = JSON.parse(localStorage.getItem('nos-chat') || '[]');
-  document.getElementById('setup').style.display='none';
-  document.getElementById('app').style.display='block';
   re();
 }
 
