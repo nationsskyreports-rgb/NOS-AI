@@ -2,8 +2,8 @@
   "name": "NOS AI Assistant",
   "short_name": "NOS AI",
   "description": "المساعد الذكي لنيشونز أوف سكاي",
-  "start_url": "/",
-  "scope": "/",
+  "start_url": "/NOS-AI/",
+  "scope": "/NOS-AI/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#0D1B2A",
@@ -12,16 +12,10 @@
   "dir": "rtl",
   "icons": [
     {
-      "src": "icon.svg",
+      "src": "/NOS-AI/icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
-    },
-    {
-      "src": "icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
     }
   ]
 }
