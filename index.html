@@ -215,22 +215,18 @@ function md(text){
 }
 
 /* ── State ── */
+const DEFAULT_WORKER = 'https://helper.soloever2.workers.dev';
 let KB=[], MSGS=[], VIEW='chat', EDIT=null, DELID=null, BUSY=false, WORKER_URL='', SEARCH='';
 let FORM={title:'',category:'general',content:''};
 
 /* ── Init ── */
 function init(){
-  WORKER_URL = localStorage.getItem('nos-worker-url') || '';
+  WORKER_URL = localStorage.getItem('nos-worker-url') || DEFAULT_WORKER;
   KB   = JSON.parse(localStorage.getItem('nos-kb')   || '[]');
   MSGS = JSON.parse(localStorage.getItem('nos-chat') || '[]');
-  if(!WORKER_URL){
-    document.getElementById('setup').style.display='flex';
-    document.getElementById('app').style.display='none';
-  } else {
-    document.getElementById('setup').style.display='none';
-    document.getElementById('app').style.display='block';
-    re();
-  }
+  document.getElementById('setup').style.display='none';
+  document.getElementById('app').style.display='block';
+  re();
 }
 
 function saveSetup(){
