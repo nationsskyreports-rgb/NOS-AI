@@ -1,10 +1,9 @@
 const CACHE = 'nos-ai-v2';
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icon.svg',
-  'https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap'
+  '/NOS-AI/',
+  '/NOS-AI/index.html',
+  '/NOS-AI/manifest.json',
+  '/NOS-AI/icon.svg'
 ];
 
 /* تثبيت — كاش الملفات الأساسية */
