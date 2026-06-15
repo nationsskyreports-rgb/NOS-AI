@@ -513,6 +513,7 @@ function rAdd(el){
 function gv(v, reset){
   VIEW=v; DELID=null;
   if(reset){ EDIT=null; FORM={title:'',category:'general',content:''}; }
+  closeSidebar();
   re();
 }
 
@@ -621,13 +622,6 @@ function toggleSidebar(){
 function closeSidebar(){
   document.getElementById('sb').classList.remove('open');
   document.getElementById('overlay').classList.remove('on');
-}
-
-/* إغلاق الـ Sidebar تلقائي لما يختار صفحة على الموبايل */
-const _gv = gv;
-function gv(v, reset){
-  closeSidebar();
-  _gv(v, reset);
 }
 
 /* ── PWA Service Worker ── */
