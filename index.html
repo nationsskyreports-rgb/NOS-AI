@@ -226,7 +226,7 @@ function md(text){
 
 /* ── Supabase Config ── */
 const SUPA_URL = 'https://xzxdaupwwwdcwfnqweub.supabase.co';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6eGRhdXB3d3dkY3dmbnFF3ZXViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzMTM5NTAsImV4cCI6MjA5MDg4OTk1MH0.KjNZpFvLxh8XfDDoWdpVsIQZAh1PjzGXOrfDmApZ4K8';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6eGRhdXB3d3dkY3dmbnF3ZXViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzMTM5NTAsImV4cCI6MjA5MDg4OTk1MH0.KjNZpFvLxh8XfDDoWdpVsIQZAh1PjzGXOrfDmApZ4K8';
 const SUPA_H   = {'Content-Type':'application/json','apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY};
 const SUPA_TB  = `${SUPA_URL}/rest/v1/nos_knowledge_base`;
 
@@ -325,7 +325,10 @@ async function importKb(inp){
         headers:{...SUPA_H,'Prefer':'resolution=merge-duplicates,return=minimal'},
         body: JSON.stringify(valid)
       });
-      if(!res.ok) throw new Error('فشل الرفع لـ Supabase');
+      if(!res.ok){
+        const err = await res.json().catch(()=>({}));
+        throw new Error(`Supabase: ${err.message || res.status}`);
+      }
 
       KB = [...KB.filter(k => !valid.find(v=>v.id===k.id)), ...valid];
       localStorage.setItem('nos-kb', JSON.stringify(KB));
