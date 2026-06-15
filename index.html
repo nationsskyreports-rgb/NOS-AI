@@ -224,9 +224,30 @@ function md(text){
   return s;
 }
 
+/* ── Supabase Config ── */
+const SUPA_URL = 'https://xzxdaupwwwdcwfnqweub.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6eGRhdXB3d3dkY3dmbnFF3ZXViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzMTM5NTAsImV4cCI6MjA5MDg4OTk1MH0.KjNZpFvLxh8XfDDoWdpVsIQZAh1PjzGXOrfDmApZ4K8';
+const SUPA_H   = {'Content-Type':'application/json','apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY};
+const SUPA_TB  = `${SUPA_URL}/rest/v1/nos_knowledge_base`;
+
+/* ── Supabase Helpers ── */
+async function sbLoad(){
+  const r = await fetch(`${SUPA_TB}?select=*&order=created_at.asc`, {headers:SUPA_H});
+  return r.ok ? await r.json() : null;
+}
+async function sbUpsert(item){
+  return fetch(SUPA_TB, {
+    method:'POST',
+    headers:{...SUPA_H,'Prefer':'resolution=merge-duplicates,return=minimal'},
+    body: JSON.stringify(item)
+  });
+}
+async function sbDelete(id){
+  return fetch(`${SUPA_TB}?id=eq.${id}`, {method:'DELETE', headers:SUPA_H});
+}
+
 /* ── State ── */
 const DEFAULT_WORKER = 'https://helper.soloever2.workers.dev';
-const KB_URL = './nos-knowledge-base.json';
 let KB=[], MSGS=[], VIEW='chat', EDIT=null, DELID=null, BUSY=false, WORKER_URL='', SEARCH='';
 let FORM={title:'',category:'general',content:''};
 
@@ -239,32 +260,15 @@ function init(){
   loadRemoteKB(); /* جيب الـ KB من GitHub في الخلفية */
 }
 
-/* ── Auto-load KB من GitHub ── */
+/* ── Sync KB من Supabase ── */
 async function loadRemoteKB(){
   try {
-    const res = await fetch(KB_URL + '?v=' + Date.now());
-    if(!res.ok) return;
-    const data = await res.json();
-    if(!Array.isArray(data)) return;
-
-    const remote = data
-      .filter(d => d.title && d.content)
-      .map(d => ({
-        ...d,
-        id: d.id || ('r' + Math.random().toString(36).slice(2)),
-        remote: true
-      }));
-
-    if(!remote.length) return;
-
-    /* احتفظ بالإضافات المحلية فقط (اللي أضافها الموظف نفسه) */
-    const local = KB.filter(k => !k.remote);
-    KB = [...remote, ...local];
-    saveKb();
+    const data = await sbLoad();
+    if(!data || !data.length) return;
+    KB = data;
+    localStorage.setItem('nos-kb', JSON.stringify(KB));
     re();
-  } catch(e){
-    /* لو فشل الفيتش (offline مثلاً) يكمل بالـ KB المحفوظة */
-  }
+  } catch(e){/* offline — يكمل بالكاش المحلي */}
 }
 
 function saveSetup(){
@@ -295,17 +299,38 @@ function exportKb(){
   a.download = 'nos-knowledge-base.json';
   a.click();
 }
-function importKb(inp){
+async function importKb(inp){
   const file = inp.files[0]; if(!file) return;
   const reader = new FileReader();
-  reader.onload = e => {
+  reader.onload = async e => {
     try {
       const data = JSON.parse(e.target.result);
       if(!Array.isArray(data)) throw new Error('ملف غير صالح');
-      const valid = data.filter(d => d.title && d.content);
-      KB = [...KB, ...valid];
-      saveKb(); re();
-      alert(`✅ تم استيراد ${valid.length} مستند بنجاح`);
+      const now = new Date().toISOString();
+      const valid = data
+        .filter(d => d.title && d.content)
+        .map(d => ({
+          id:         d.id || ('k'+Date.now()+Math.random().toString(36).slice(2)),
+          title:      d.title,
+          category:   d.category || 'general',
+          content:    d.content,
+          created_at: d.createdAt || d.created_at || now,
+          updated_at: d.updatedAt || d.updated_at || now
+        }));
+      if(!valid.length) throw new Error('لا يوجد مستندات صالحة');
+
+      /* رفع batch لـ Supabase */
+      const res = await fetch(SUPA_TB, {
+        method:'POST',
+        headers:{...SUPA_H,'Prefer':'resolution=merge-duplicates,return=minimal'},
+        body: JSON.stringify(valid)
+      });
+      if(!res.ok) throw new Error('فشل الرفع لـ Supabase');
+
+      KB = [...KB.filter(k => !valid.find(v=>v.id===k.id)), ...valid];
+      localStorage.setItem('nos-kb', JSON.stringify(KB));
+      re();
+      alert(`✅ تم استيراد ${valid.length} مستند ورفعهم على Supabase`);
     } catch(err) { alert('❌ خطأ: ' + err.message); }
   };
   reader.readAsText(file);
@@ -523,12 +548,15 @@ function openEdit(id){
   VIEW='add'; DELID=null; re();
 }
 
-function doDelete(id){
+async function doDelete(id){
   KB = KB.filter(k=>k.id!==id);
-  DELID=null; saveKb(); re();
+  DELID=null;
+  localStorage.setItem('nos-kb', JSON.stringify(KB));
+  re();
+  await sbDelete(id);
 }
 
-function saveItem(){
+async function saveItem(){
   const ft = document.getElementById('f-title');
   const fc = document.getElementById('f-content');
   if(ft) FORM.title   = ft.value;
@@ -546,13 +574,23 @@ function saveItem(){
   if(fe) fe.style.display='none';
 
   const now = new Date().toISOString();
-  if(EDIT){
-    KB = KB.map(k => k.id===EDIT.id ? {...k,...FORM,updatedAt:now} : k);
-  } else {
-    KB.push({id:'k'+Date.now(), ...FORM, createdAt:now, updatedAt:now});
+  const item = EDIT
+    ? {...EDIT, ...FORM, updated_at: now}
+    : {id:'k'+Date.now(), ...FORM, created_at: now, updated_at: now};
+
+  /* تحديث محلي فوري */
+  KB = EDIT ? KB.map(k => k.id===item.id ? item : k) : [...KB, item];
+  EDIT=null;
+  localStorage.setItem('nos-kb', JSON.stringify(KB));
+  if(fo){ fo.style.display='block'; fo.textContent='⏳ جاري الحفظ...'; }
+
+  /* رفع لـ Supabase */
+  try {
+    await sbUpsert(item);
+    if(fo){ fo.textContent='✅ تم الحفظ بنجاح!'; }
+  } catch(e){
+    if(fo){ fo.textContent='⚠️ تم الحفظ محلياً — تحقق من الاتصال'; }
   }
-  EDIT=null; saveKb();
-  if(fo){ fo.style.display='block'; fo.textContent='✅ تم الحفظ بنجاح!'; }
   setTimeout(() => { VIEW='manage'; re(); }, 900);
 }
 
