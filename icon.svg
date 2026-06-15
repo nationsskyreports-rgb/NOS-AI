@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background -->
+  <rect width="512" height="512" rx="100" fill="#0D1B2A"/>
+  <!-- Gold accent bar -->
+  <rect x="60" y="380" width="392" height="8" rx="4" fill="#C8A86B" opacity="0.4"/>
+  <!-- Robot head -->
+  <rect x="156" y="130" width="200" height="170" rx="30" fill="#1A2D40" stroke="#C8A86B" stroke-width="6"/>
+  <!-- Eyes -->
+  <circle cx="210" cy="205" r="22" fill="#C8A86B"/>
+  <circle cx="302" cy="205" r="22" fill="#C8A86B"/>
+  <circle cx="210" cy="205" r="10" fill="#0D1B2A"/>
+  <circle cx="302" cy="205" r="10" fill="#0D1B2A"/>
+  <!-- Mouth -->
+  <rect x="196" y="255" width="120" height="12" rx="6" fill="#C8A86B" opacity="0.7"/>
+  <!-- Antenna -->
+  <line x1="256" y1="130" x2="256" y2="90" stroke="#C8A86B" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="256" cy="78" r="14" fill="#C8A86B"/>
+  <!-- Ears -->
+  <rect x="126" y="175" width="30" height="50" rx="10" fill="#1A2D40" stroke="#C8A86B" stroke-width="5"/>
+  <rect x="356" y="175" width="30" height="50" rx="10" fill="#1A2D40" stroke="#C8A86B" stroke-width="5"/>
+  <!-- Body -->
+  <rect x="176" y="316" width="160" height="80" rx="20" fill="#1A2D40" stroke="#C8A86B" stroke-width="5"/>
+  <!-- NOS text -->
+  <text x="256" y="368" font-family="Arial,sans-serif" font-size="28" font-weight="700" fill="#C8A86B" text-anchor="middle">NOS AI</text>
+</svg>
