@@ -476,7 +476,7 @@ function rManage(el){
             </div>
             <div style="font-weight:600;font-size:13px;margin-bottom:5px;">${esc(item.title)}</div>
             <div style="font-size:12px;color:#6B7280;line-height:1.6;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;">${esc(item.content)}</div>
-            <div style="font-size:10px;color:#D1D5DB;margin-top:8px;">${new Date(item.updatedAt||item.createdAt).toLocaleDateString('ar-EG')} • ${item.content.length.toLocaleString()} حرف</div>
+            <div style="font-size:10px;color:#D1D5DB;margin-top:8px;">${new Date(item.updated_at||item.updatedAt||item.created_at||item.createdAt).toLocaleDateString('ar-EG')} • ${item.content.length.toLocaleString()} حرف</div>
           </div>`;
         }).join('')}</div>`
       }
@@ -606,22 +606,26 @@ async function doSend(){
   if(inp) inp.value='';
   BUSY=true; saveMsgs(); re();
 
+  /* ── تنظيف HTML من المحتوى ── */
+  function clean(text){
+    return text.replace(/<[^>]*>/g,' ').replace(/&nbsp;/g,' ').replace(/\s+/g,' ').trim();
+  }
+
   /* ── Smart KB Filter: بس أكتر 5 مستندات ذات صلة ── */
   function relevantDocs(q, limit=5){
     if(!KB.length) return [];
     const words = q.toLowerCase().split(/[\s،,،؟?]+/).filter(w=>w.length>1);
     const scored = KB.map(k => {
-      const text = (k.title+' '+k.content).toLowerCase();
+      const text = (k.title+' '+clean(k.content)).toLowerCase();
       const score = words.reduce((s,w) => s + (text.includes(w) ? 1 : 0), 0);
       return {k, score};
     });
     scored.sort((a,b) => b.score-a.score);
     const top = scored.slice(0, limit).map(x=>x.k);
-    // لو ملقيناش حاجة ذات صلة، نبعت أول 3 مستندات
     return top.length && scored[0].score>0 ? top : KB.slice(0,3);
   }
-  /* قصّر كل مستند على 1200 حرف عشان منتعداش الحد */
-  function trim(text, max=1200){ return text.length>max ? text.slice(0,max)+'…' : text; }
+  /* قصّر كل مستند على 1200 حرف */
+  function trim(text, max=1200){ const t=clean(text); return t.length>max ? t.slice(0,max)+'…' : t; }
 
   const docs = relevantDocs(txt);
   const base = 'أنت مساعد ذكي لشركة Nations of Sky (NOS). أجب بناءً على قاعدة المعرفة التالية فقط. إذا لم تجد المعلومة، قل ذلك صراحةً. استخدم العربية أساساً. كن مختصراً ومفيداً.';
