@@ -226,6 +226,7 @@ function md(text){
 
 /* ── State ── */
 const DEFAULT_WORKER = 'https://helper.soloever2.workers.dev';
+const KB_URL = './nos-knowledge-base.json';
 let KB=[], MSGS=[], VIEW='chat', EDIT=null, DELID=null, BUSY=false, WORKER_URL='', SEARCH='';
 let FORM={title:'',category:'general',content:''};
 
@@ -235,6 +236,35 @@ function init(){
   KB   = JSON.parse(localStorage.getItem('nos-kb')   || '[]');
   MSGS = JSON.parse(localStorage.getItem('nos-chat') || '[]');
   re();
+  loadRemoteKB(); /* جيب الـ KB من GitHub في الخلفية */
+}
+
+/* ── Auto-load KB من GitHub ── */
+async function loadRemoteKB(){
+  try {
+    const res = await fetch(KB_URL + '?v=' + Date.now());
+    if(!res.ok) return;
+    const data = await res.json();
+    if(!Array.isArray(data)) return;
+
+    const remote = data
+      .filter(d => d.title && d.content)
+      .map(d => ({
+        ...d,
+        id: d.id || ('r' + Math.random().toString(36).slice(2)),
+        remote: true
+      }));
+
+    if(!remote.length) return;
+
+    /* احتفظ بالإضافات المحلية فقط (اللي أضافها الموظف نفسه) */
+    const local = KB.filter(k => !k.remote);
+    KB = [...remote, ...local];
+    saveKb();
+    re();
+  } catch(e){
+    /* لو فشل الفيتش (offline مثلاً) يكمل بالـ KB المحفوظة */
+  }
 }
 
 function saveSetup(){
