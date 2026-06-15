@@ -611,8 +611,8 @@ async function doSend(){
     return text.replace(/<[^>]*>/g,' ').replace(/&nbsp;/g,' ').replace(/\s+/g,' ').trim();
   }
 
-  /* ── Smart KB Filter: بس أكتر 5 مستندات ذات صلة ── */
-  function relevantDocs(q, limit=5){
+  /* ── Smart KB Filter: بس أكتر 3 مستندات ذات صلة ── */
+  function relevantDocs(q, limit=3){
     if(!KB.length) return [];
     const words = q.toLowerCase().split(/[\s،,،؟?]+/).filter(w=>w.length>1);
     const scored = KB.map(k => {
@@ -622,10 +622,10 @@ async function doSend(){
     });
     scored.sort((a,b) => b.score-a.score);
     const top = scored.slice(0, limit).map(x=>x.k);
-    return top.length && scored[0].score>0 ? top : KB.slice(0,3);
+    return top.length && scored[0].score>0 ? top : KB.slice(0,2);
   }
-  /* قصّر كل مستند على 1200 حرف */
-  function trim(text, max=1200){ const t=clean(text); return t.length>max ? t.slice(0,max)+'…' : t; }
+  /* قصّر كل مستند على 600 حرف */
+  function trim(text, max=600){ const t=clean(text); return t.length>max ? t.slice(0,max)+'…' : t; }
 
   const docs = relevantDocs(txt);
   const base = 'أنت مساعد ذكي لشركة Nations of Sky (NOS). أجب بناءً على قاعدة المعرفة التالية فقط. إذا لم تجد المعلومة، قل ذلك صراحةً. استخدم العربية أساساً. كن مختصراً ومفيداً.';
@@ -647,7 +647,12 @@ async function doSend(){
     if(d.error) throw new Error(d.error);
     MSGS.push({role:'assistant', content: d.text || 'لم أتمكن من الإجابة.'});
   } catch(err) {
-    MSGS.push({role:'assistant', content:'❌ خطأ في الاتصال:\n' + err.message});
+    const msg = err.message||'';
+    const wait = msg.match(/try again in ([\d.]+)s/);
+    MSGS.push({role:'assistant', content:
+      wait ? `⏳ الطلبات كتير — استنى ${Math.ceil(wait[1])} ثانية وحاول تاني.`
+           : '❌ خطأ في الاتصال:\n' + msg
+    });
   }
   BUSY=false; saveMsgs(); re();
 }
