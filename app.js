@@ -483,31 +483,71 @@ function relevantDocs(q, limit=3){
 function trimDoc(text,max=600){ const t=clean(text); return t.length>max?t.slice(0,max)+'…':t; }
 
 async function doSend(){
-  const inp=document.getElementById('chat-inp');
-  const txt=inp?inp.value.trim():'';
-  if(!txt||BUSY) return;
-  MSGS.push({role:'user',content:txt});
+  const inp = document.getElementById('chat-inp');
+  const txt = inp ? inp.value.trim() : '';
+  if(!txt || BUSY) return;
+
+  MSGS.push({role:'user', content:txt});
   if(inp) inp.value='';
   BUSY=true; saveMsgs(); re();
 
-  /* سجّل السؤال في Supabase */
   sbLog(txt);
 
-  const docs=relevantDocs(txt);
-  const base='أنت مساعد ذكي لشركة Nations of Sky (NOS). أجب بناءً على قاعدة المعرفة التالية فقط. إذا لم تجد المعلومة، قل ذلك صراحةً. استخدم العربية أساساً. كن مختصراً ومفيداً.';
-  const ctx=KB.length
-    ?base+'\n\n# قاعدة المعرفة:\n\n'+docs.map((k,i)=>`### [${i+1}] ${k.title}\n${trimDoc(k.content)}`).join('\n\n---\n\n')
-    :base+'\n\nقاعدة المعرفة فارغة حالياً.';
+  const base = 'أنت مساعد ذكي لشركة Nations of Sky (NOS). أجب بناءً على قاعدة المعرفة التالية فقط. إذا لم تجد المعلومة، قل ذلك صراحةً. استخدم العربية أساساً. كن مختصراً ومفيداً.';
 
-  try{
-    const res=await fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:MSGS.map(m=>({role:m.role,content:m.content})),system:ctx})});
-    const d=await res.json();
+  try {
+    let docs = [];
+
+    if(KB.length > 0){
+      /* ── الخطوة 1: الـ AI يختار الـ Docs الأكثر صلة من العناوين ── */
+      const titles = KB.map(k=>`${k.id}: ${k.title}`).join('\n');
+
+      const r1 = await fetch(WORKER_URL, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          messages:[{role:'user', content:
+            `السؤال: ${txt}\n\nالمستندات المتاحة:\n${titles}\n\nأعطني IDs الـ 3 الأكثر صلة فقط كـ JSON array. لا تكتب أي شيء آخر.`
+          }],
+          system:'أنت نظام اختيار مستندات. أجب فقط بـ JSON array من IDs. مثال: ["k001","k008"]. لا كلام إضافي.'
+        })
+      });
+      const d1 = await r1.json();
+
+      if(!d1.error && d1.text){
+        try {
+          const match = d1.text.match(/\[[\s\S]*?\]/);
+          if(match) docs = KB.filter(k => JSON.parse(match[0]).includes(k.id));
+        } catch(e){}
+      }
+
+      /* fallback للـ keyword matching لو فشل الـ AI */
+      if(!docs.length) docs = relevantDocs(txt);
+    }
+
+    /* ── الخطوة 2: السؤال الحقيقي مع السياق المختار ── */
+    const ctx = KB.length
+      ? base + '\n\n# قاعدة المعرفة:\n\n'
+        + docs.map((k,i)=>`### [${i+1}] ${k.title}\n${trimDoc(k.content)}`).join('\n\n---\n\n')
+      : base + '\n\nقاعدة المعرفة فارغة حالياً.';
+
+    const res = await fetch(WORKER_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        messages: MSGS.map(m=>({role:m.role, content:m.content})),
+        system: ctx
+      })
+    });
+    const d = await res.json();
     if(d.error) throw new Error(d.error);
-    MSGS.push({role:'assistant',content:d.text||'لم أتمكن من الإجابة.'});
-  }catch(err){
-    const msg=err.message||'';
-    const wait=msg.match(/try again in ([\d.]+)s/);
-    MSGS.push({role:'assistant',content:wait?`⏳ استنى ${Math.ceil(wait[1])} ثانية وحاول تاني.`:'❌ خطأ في الاتصال:\n'+msg});
+    MSGS.push({role:'assistant', content: d.text||'لم أتمكن من الإجابة.'});
+
+  } catch(err){
+    const msg = err.message||'';
+    const wait = msg.match(/try again in ([\d.]+)s/);
+    MSGS.push({role:'assistant', content:
+      wait ? `⏳ استنى ${Math.ceil(wait[1])} ثانية وحاول تاني.`
+           : '❌ خطأ في الاتصال:\n'+msg
+    });
   }
   BUSY=false; saveMsgs(); re();
 }
