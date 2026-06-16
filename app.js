@@ -94,7 +94,9 @@ async function loadRemoteKB(){
 function saveKb()  { localStorage.setItem('nos-kb',   JSON.stringify(KB)); }
 function saveMsgs(){ localStorage.setItem('nos-chat', JSON.stringify(MSGS.slice(-40))); }
 function resetSetup(){
-  if(!confirm('إعادة إعداد رابط الـ Worker؟')) return;
+  const pwd = prompt('Enter admin password:');
+  if(pwd !== 'NOS@123'){ alert('Incorrect password.'); return; }
+  if(!confirm('Reset Worker URL?')) return;
   localStorage.removeItem('nos-worker-url'); location.reload();
 }
 
@@ -126,8 +128,8 @@ async function importKb(inp){
       KB = [...KB.filter(k=>!valid.find(v=>v.id===k.id)), ...valid];
       localStorage.setItem('nos-kb', JSON.stringify(KB));
       re();
-      alert(`✅ تم استيراد ${valid.length} مستند`);
-    }catch(err){ alert('❌ خطأ: '+err.message); }
+      alert(`✅ Imported ${valid.length} documents to Supabase`);
+    }catch(err){ alert('❌ Error: '+err.message); }
   };
   reader.readAsText(file);
   inp.value='';
@@ -157,7 +159,7 @@ function re(){
 
       sl.innerHTML = `
         <div class="sb-search">
-          <input type="text" placeholder="🔍 بحث في المستندات..."
+          <input type="text" placeholder="🔍 Search documents..."
             value="${esc(SB_SEARCH)}"
             oninput="SB_SEARCH=this.value;re()"
             onclick="event.stopPropagation()" />
@@ -171,7 +173,7 @@ function re(){
               </div>`;
             }).join('') +
             (!SB_SEARCH && KB.length>12 ? `<div style="color:#2A4060;font-size:9px;text-align:center;padding:4px 0;">+${KB.length-12} مزيد</div>` : '')
-          : `<div style="text-align:center;padding:12px 8px;color:#3A5A7A;font-size:11px;">لا نتائج</div>`
+          : `<div style="text-align:center;padding:12px 8px;color:#3A5A7A;font-size:11px;">No results</div>`
         );
     } else {
       sl.innerHTML = '';
@@ -201,37 +203,37 @@ function rChat(el){
     <div class="mh">
       <button class="menu-btn" onclick="toggleSidebar()">☰</button>
       <div>
-        <div class="mh-title">المساعد الذكي</div>
-        <div class="mh-sub">${KB.length?KB.length+' مستند محمّل':'لا توجد بيانات'}</div>
+        <div class="mh-title">AI Assistant</div>
+        <div class="mh-sub">${KB.length?KB.length+' documents loaded':'No data — add content first'}</div>
       </div>
-      ${MSGS.length?`<button class="ibtn" onclick="clearChat()">مسح المحادثة</button>`:''}
+      ${MSGS.length?`<button class="ibtn" onclick="clearChat()">Clear Chat</button>`:''}
     </div>
     <div id="cmsg">
       ${!MSGS.length?`
         <div style="flex:1;display:flex;align-items:center;justify-content:center;min-height:300px;">
           <div style="text-align:center;max-width:340px;direction:rtl;">
             <div style="font-size:44px;margin-bottom:12px;">🤖</div>
-            <div style="font-weight:700;font-size:16px;margin-bottom:8px;">مرحباً! أنا مساعد NOS</div>
+            <div style="font-weight:700;font-size:16px;margin-bottom:8px;">Hi! I'm the NOS Assistant</div>
             <div style="font-size:13px;color:var(--sub-text);line-height:1.8;">
-              ${KB.length?`لدي ${KB.length} مستند جاهز. اسألني!`:'ابدأ بإضافة محتوى من قاعدة المعرفة.'}
+              ${KB.length?`I have ${KB.length} documents ready. Ask me anything!`:'Start by adding content to the knowledge base.'}
             </div>
-            ${!KB.length?`<button class="pri-btn" onclick="gv('manage')" style="margin-top:14px;font-size:13px;">📚 فتح قاعدة المعرفة</button>`:''}
+            ${!KB.length?`<button class="pri-btn" onclick="gv('manage')" style="margin-top:14px;font-size:13px;">📚 Open Knowledge Base</button>`:''}
             ${KB.length?`
             <div style="margin-top:20px;">
-              <div style="font-size:11px;color:var(--sub-text);margin-bottom:10px;">أسئلة شائعة 👇</div>
+              <div style="font-size:11px;color:var(--sub-text);margin-bottom:10px;">Common Questions 👇</div>
               <div style="display:flex;flex-direction:column;gap:8px;">
                 ${[
-                  'ما هي مستندات التنازل المطلوبة؟',
-                  'ما هو الـ SLA لكل نوع طلب؟',
-                  'ما هي إجراءات إلغاء العقد واسترداد المبالغ؟',
-                  'ما هي رسوم إصدار عقد جديد؟',
-                  'ما هي إجراءات تغيير الشيكات؟',
-                  'كيف يطلب العميل زيارة الموقع؟'
+                  'What documents are required for an assignment?',
+                  'What is the SLA for each request type?',
+                  'What are the procedures for contract cancellation and refund?',
+                  'What are the fees for issuing a new contract?',
+                  'What are the check replacement procedures?',
+                  'How does a client request a site visit?'
                 ].map(q=>`
                   <button onclick="sendQuick('${q}')" style="
                     background:var(--card-bg);border:1.5px solid var(--card-border);
                     border-radius:20px;padding:9px 16px;font-size:12.5px;color:var(--text);
-                    font-family:'Tajawal',sans-serif;cursor:pointer;text-align:right;direction:rtl;line-height:1.4;
+                    font-family:'Tajawal',sans-serif;cursor:pointer;text-align:right;direction:ltr;line-height:1.4;
                     transition:border-color .15s,background .15s;
                   " onmouseover="this.style.borderColor='#C8A86B'"
                      onmouseout="this.style.borderColor=''">${q}</button>
@@ -251,10 +253,10 @@ function rChat(el){
     </div>
     <div class="cinput-area">
       <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:4px;">
-        <textarea id="chat-inp" rows="2" placeholder="اكتب سؤالك... (Enter للإرسال، Shift+Enter لسطر جديد)" ${BUSY?'disabled':''}></textarea>
-        <button class="send-btn" onclick="doSend()" ${BUSY?'disabled':''}>إرسال ↑</button>
+        <textarea id="chat-inp" rows="2" placeholder="Type your question... (Enter to send, Shift+Enter for new line)" ${BUSY?'disabled':''}></textarea>
+        <button class="send-btn" onclick="doSend()" ${BUSY?'disabled':''}>Send ↑</button>
       </div>
-      <div style="font-size:10px;color:var(--sub-text);direction:rtl;">${KB.length} مستند • المحادثة محفوظة تلقائياً</div>
+      <div style="font-size:10px;color:var(--sub-text);direction:ltr;">${KB.length} documents • Chat saved automatically</div>
     </div>`;
 
   const inp = document.getElementById('chat-inp');
@@ -270,17 +272,17 @@ function rManage(el){
   el.innerHTML = `
     <div class="mh">
       <button class="menu-btn" onclick="toggleSidebar()">☰</button>
-      <div class="mh-title" style="direction:rtl;">📚 قاعدة المعرفة (${KB.length})</div>
-      <input value="${esc(SEARCH)}" placeholder="🔍 بحث..."
-        style="padding:6px 12px;border:1px solid var(--inp-border);border-radius:6px;font-size:13px;outline:none;direction:rtl;width:180px;background:var(--inp-bg);color:var(--text);"
+      <div class="mh-title" style="direction:ltr;">📚 Knowledge Base (${KB.length})</div>
+      <input value="${esc(SEARCH)}" placeholder="🔍 Search..."
+        style="padding:6px 12px;border:1px solid var(--inp-border);border-radius:6px;font-size:13px;outline:none;direction:ltr;width:180px;background:var(--inp-bg);color:var(--text);"
         oninput="SEARCH=this.value;rManage(document.getElementById('main'))" />
     </div>
     <div style="flex:1;overflow-y:auto;padding:16px;">
       ${!filtered.length?`
         <div style="text-align:center;padding:50px;color:var(--sub-text);direction:rtl;">
           <div style="font-size:40px;margin-bottom:10px;">📭</div>
-          <div style="font-size:14px;">${KB.length===0?'لا يوجد محتوى. أضف أول مستند!':'لا نتائج للبحث'}</div>
-          ${KB.length===0?`<button class="pri-btn" onclick="gv('add',true)" style="margin-top:14px;">+ إضافة أول مستند</button>`:''}
+          <div style="font-size:14px;">${KB.length===0?'No content yet. Add your first document!':'No search results'}</div>
+          ${KB.length===0?`<button class="pri-btn" onclick="gv('add',true)" style="margin-top:14px;">+ Add First Document</button>`:''}
         </div>`:`
         <div class="kb-grid">${filtered.map(item=>{
           const c=gc(item.category);
@@ -289,11 +291,11 @@ function rManage(el){
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;">
               <span class="cbadge" style="background:${c.bg};color:${c.col};">${c.ar}</span>
               ${conf?`<div style="display:flex;gap:4px;align-items:center;">
-                <span style="font-size:11px;color:#B91C1C;">تأكيد الحذف؟</span>
-                <button onclick="doDelete('${item.id}')" style="padding:2px 7px;font-size:11px;background:#DC2626;border:none;border-radius:4px;color:#fff;font-weight:600;">نعم</button>
-                <button onclick="DELID=null;re()" style="padding:2px 7px;font-size:11px;background:#F3F4F6;border:none;border-radius:4px;">لا</button>
+                <span style="font-size:11px;color:#B91C1C;">Confirm delete?</span>
+                <button onclick="doDelete('${item.id}')" style="padding:2px 7px;font-size:11px;background:#DC2626;border:none;border-radius:4px;color:#fff;font-weight:600;">Yes</button>
+                <button onclick="DELID=null;re()" style="padding:2px 7px;font-size:11px;background:#F3F4F6;border:none;border-radius:4px;">No</button>
               </div>`:`<div style="display:flex;gap:4px;">
-                <button class="edit-btn" onclick="openEdit('${item.id}')">✏️ تعديل</button>
+                <button class="edit-btn" onclick="openEdit('${item.id}')">✏️ Edit</button>
                 <button class="del-btn" onclick="DELID='${item.id}';re()">🗑️</button>
               </div>`}
             </div>
@@ -311,20 +313,20 @@ function rAdd(el){
   el.innerHTML = `
     <div class="mh">
       <button class="menu-btn" onclick="toggleSidebar()">☰</button>
-      <div class="mh-title" style="direction:rtl;">${EDIT?'✏️ تعديل المستند':'➕ إضافة محتوى جديد'}</div>
-      <button class="ibtn" onclick="gv('manage')">← رجوع</button>
+      <div class="mh-title" style="direction:ltr;">${EDIT?'✏️ Edit Document':'➕ Add New Content'}</div>
+      <button class="ibtn" onclick="gv('manage')">← Back</button>
     </div>
     <div style="flex:1;overflow-y:auto;padding:20px;">
       <div style="max-width:680px;margin:0 auto;direction:rtl;">
         <div class="hint-box" style="margin-bottom:16px;">
-          💡 الصق نص السياسة أو الإجراء أو النموذج في خانة المحتوى. يمكنك نسخ النص من PDF أو Word أو أي مصدر.
+          💡 Paste the text of the policy, procedure, or form in the content field. You can copy text from PDF, Word, or any source.
         </div>
         <div style="margin-bottom:14px;">
-          <label class="form-label">عنوان المستند *</label>
-          <input class="form-inp" id="f-title" value="${esc(FORM.title)}" oninput="FORM.title=this.value" placeholder="مثال: إجراءات التنازل عن الوحدة" />
+          <label class="form-label">Document Title *</label>
+          <input class="form-inp" id="f-title" value="${esc(FORM.title)}" oninput="FORM.title=this.value" placeholder="e.g. Assignment Transfer Procedures" />
         </div>
         <div style="margin-bottom:14px;">
-          <label class="form-label">التصنيف</label>
+          <label class="form-label">Category</label>
           <div style="display:flex;flex-wrap:wrap;gap:6px;">
             ${CATS.map(c=>`
               <button onclick="FORM.category='${c.id}';rAdd(document.getElementById('main'))"
@@ -335,19 +337,19 @@ function rAdd(el){
           </div>
         </div>
         <div style="margin-bottom:14px;">
-          <label class="form-label">المحتوى * <span style="font-weight:400;color:var(--sub-text);">(الصق النص هنا)</span></label>
+          <label class="form-label">Content * <span style="font-weight:400;color:var(--sub-text);">(paste text here)</span></label>
           <textarea id="f-content" rows="14"
-            oninput="FORM.content=this.value;document.getElementById('cc').textContent=this.value.length.toLocaleString()+' حرف'"
-            placeholder="الصق هنا نص السياسة أو الإجراء أو النموذج..."
-            style="width:100%;padding:11px 13px;border:1px solid var(--inp-border);border-radius:7px;font-size:13px;resize:vertical;outline:none;line-height:1.75;direction:rtl;background:var(--inp-bg);color:var(--text);"
+            oninput="FORM.content=this.value;document.getElementById('cc').textContent=this.value.length.toLocaleString()+' chars'"
+            placeholder="Paste the policy, procedure, or form text here..."
+            style="width:100%;padding:11px 13px;border:1px solid var(--inp-border);border-radius:7px;font-size:13px;resize:vertical;outline:none;line-height:1.75;direction:ltr;background:var(--inp-bg);color:var(--text);"
           >${esc(FORM.content)}</textarea>
-          <div id="cc" style="font-size:10px;color:var(--sub-text);margin-top:3px;text-align:left;">${FORM.content.length.toLocaleString()} حرف</div>
+          <div id="cc" style="font-size:10px;color:var(--sub-text);margin-top:3px;text-align:left;">${FORM.content.length.toLocaleString()} chars</div>
         </div>
         <div id="ferr" style="display:none" class="err-box"></div>
         <div id="fok"  style="display:none" class="ok-box"></div>
         <div style="display:flex;gap:8px;margin-top:12px;">
-          <button class="pri-btn" onclick="saveItem()">${EDIT?'💾 حفظ التعديلات':'➕ إضافة إلى قاعدة المعرفة'}</button>
-          <button class="sec-btn" onclick="gv('manage')">إلغاء</button>
+          <button class="pri-btn" onclick="saveItem()">${EDIT?'💾 Save Changes':'➕ Add to Knowledge Base'}</button>
+          <button class="sec-btn" onclick="gv('manage')">Cancel</button>
         </div>
       </div>
     </div>`;
@@ -358,13 +360,13 @@ async function rAnalytics(el){
   el.innerHTML = `
     <div class="mh">
       <button class="menu-btn" onclick="toggleSidebar()">☰</button>
-      <div class="mh-title" style="direction:rtl;">📊 تحليلات الأسئلة</div>
+      <div class="mh-title">📊 Question Analytics</div>
     </div>
-    <div style="flex:1;overflow-y:auto;padding:20px;direction:rtl;">
+    <div style="flex:1;overflow-y:auto;padding:20px;">
       <div style="max-width:680px;margin:0 auto;">
         <div style="text-align:center;padding:40px;color:var(--sub-text);">
           <div style="font-size:32px;margin-bottom:8px;">⏳</div>
-          <div>جاري تحميل البيانات...</div>
+          <div>Loading data...</div>
         </div>
       </div>
     </div>`;
@@ -372,11 +374,10 @@ async function rAnalytics(el){
   try {
     const logs = await sbLogs();
     if(!logs.length){
-      el.querySelector('div[style*="padding:40px"]').innerHTML = '<div style="font-size:32px;margin-bottom:8px;">📭</div><div>لا يوجد أسئلة مسجلة بعد</div>';
+      el.querySelector('div[style*="padding:40px"]').innerHTML = '<div style="font-size:32px;margin-bottom:8px;">📭</div><div>No questions logged yet</div>';
       return;
     }
 
-    /* احسب الأسئلة الأكثر تكراراً */
     const counts = {};
     logs.forEach(l=>{ counts[l.question]=(counts[l.question]||0)+1; });
     const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,20);
@@ -389,17 +390,16 @@ async function rAnalytics(el){
     el.innerHTML = `
       <div class="mh">
         <button class="menu-btn" onclick="toggleSidebar()">☰</button>
-        <div class="mh-title" style="direction:rtl;">📊 تحليلات الأسئلة</div>
-        <div style="font-size:11px;color:var(--sub-text);">آخر 200 سؤال</div>
+        <div class="mh-title">📊 Question Analytics</div>
+        <div style="font-size:11px;color:var(--sub-text);">Last 200 questions</div>
       </div>
-      <div style="flex:1;overflow-y:auto;padding:20px;direction:rtl;">
+      <div style="flex:1;overflow-y:auto;padding:20px;">
         <div style="max-width:680px;margin:0 auto;">
-
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px;">
             ${[
-              {label:'إجمالي الأسئلة', val:totalQ,  icon:'💬'},
-              {label:'أسئلة اليوم',    val:today,   icon:'📅'},
-              {label:'أسئلة مختلفة',  val:uniqueQ, icon:'🔤'},
+              {label:'Total Questions', val:totalQ,  icon:'💬'},
+              {label:"Today's Questions", val:today, icon:'📅'},
+              {label:'Unique Questions', val:uniqueQ,icon:'🔤'},
             ].map(s=>`
               <div style="background:var(--card-bg);border:1px solid var(--card-border);border-radius:10px;padding:14px;text-align:center;">
                 <div style="font-size:24px;">${s.icon}</div>
@@ -407,8 +407,7 @@ async function rAnalytics(el){
                 <div style="font-size:11px;color:var(--sub-text);">${s.label}</div>
               </div>`).join('')}
           </div>
-
-          <div style="font-weight:600;font-size:14px;margin-bottom:12px;">أكثر الأسئلة تكراراً</div>
+          <div style="font-weight:600;font-size:14px;margin-bottom:12px;">Most Asked Questions</div>
           ${sorted.map(([q,c],i)=>`
             <div class="analytics-row">
               <div class="analytics-rank">${i+1}</div>
@@ -418,11 +417,10 @@ async function rAnalytics(el){
               </div>
               <div style="font-size:13px;font-weight:700;color:#C8A86B;min-width:30px;text-align:center;">${c}</div>
             </div>`).join('')}
-
         </div>
       </div>`;
   }catch(e){
-    el.innerHTML += `<div style="color:var(--err-text);padding:20px;text-align:center;">❌ فشل تحميل البيانات</div>`;
+    el.innerHTML += `<div style="color:var(--err-text);padding:20px;text-align:center;">❌ Failed to load data</div>`;
   }
 }
 
@@ -452,16 +450,16 @@ async function saveItem(){
   if(fc) FORM.content=fc.value;
   const fe=document.getElementById('ferr');
   const fo=document.getElementById('fok');
-  if(!FORM.title.trim()){ if(fe){fe.style.display='block';fe.textContent='⚠️ العنوان مطلوب';} return; }
-  if(!FORM.content.trim()){ if(fe){fe.style.display='block';fe.textContent='⚠️ المحتوى مطلوب';} return; }
+  if(!FORM.title.trim()){ if(fe){fe.style.display='block';fe.textContent='⚠️ Title is required';} return; }
+  if(!FORM.content.trim()){ if(fe){fe.style.display='block';fe.textContent='⚠️ Content is required';} return; }
   if(fe) fe.style.display='none';
   const now=new Date().toISOString();
   const item=EDIT?{...EDIT,...FORM,updated_at:now}:{id:'k'+Date.now(),...FORM,created_at:now,updated_at:now};
   KB=EDIT?KB.map(k=>k.id===item.id?item:k):[...KB,item];
   EDIT=null; localStorage.setItem('nos-kb',JSON.stringify(KB));
-  if(fo){fo.style.display='block';fo.textContent='⏳ جاري الحفظ...';}
-  try{ await sbUpsert(item); if(fo) fo.textContent='✅ تم الحفظ!'; }
-  catch(e){ if(fo) fo.textContent='⚠️ تم الحفظ محلياً فقط'; }
+  if(fo){fo.style.display='block';fo.textContent='⏳ Saving...';}
+  try{ await sbUpsert(item); if(fo) fo.textContent='✅ Saved successfully!'; }
+  catch(e){ if(fo) fo.textContent='⚠️ Saved locally only — check connection'; }
   setTimeout(()=>{VIEW='manage';re();},900);
 }
 
@@ -545,14 +543,14 @@ async function doSend(){
     const msg = err.message||'';
     const wait = msg.match(/try again in ([\d.]+)s/);
     MSGS.push({role:'assistant', content:
-      wait ? `⏳ استنى ${Math.ceil(wait[1])} ثانية وحاول تاني.`
-           : '❌ خطأ في الاتصال:\n'+msg
+      wait ? `⏳ Too many requests — wait ${Math.ceil(wait[1])} seconds and try again.`
+           : '❌ Connection error:\n'+msg
     });
   }
   BUSY=false; saveMsgs(); re();
 }
 
-function clearChat(){ if(!confirm('مسح كل المحادثة؟')) return; MSGS=[]; saveMsgs(); re(); }
+function clearChat(){ if(!confirm('Clear all chat messages?')) return; MSGS=[]; saveMsgs(); re(); }
 function sendQuick(q){ const inp=document.getElementById('chat-inp'); if(inp) inp.value=q; doSend(); }
 
 /* ── Sidebar Toggle ── */
