@@ -1,15 +1,14 @@
-const CACHE = 'nos-ai-v2';
-const ASSETS = [
-  '/NOS-AI/',
-  '/NOS-AI/index.html',
-  '/NOS-AI/manifest.json',
-  '/NOS-AI/icon.svg'
-];
+const CACHE = 'nos-ai-v3';
 
-/* تثبيت — كاش الملفات الأساسية */
+/* تثبيت — كاش الملفات الثابتة فقط */
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(ASSETS).catch(() => {}))
+    caches.open(CACHE).then(c => c.addAll([
+      '/NOS-AI/',
+      '/NOS-AI/index.html',
+      '/NOS-AI/manifest.json',
+      '/NOS-AI/icon.svg'
+    ]).catch(() => {}))
   );
   self.skipWaiting();
 });
@@ -24,13 +23,30 @@ self.addEventListener('activate', e => {
   self.clients.claim();
 });
 
-/* طلبات — من الكاش لو موجود، وإلا من النت */
+/* طلبات */
 self.addEventListener('fetch', e => {
-  /* تجاهل طلبات الـ API */
-  if(e.request.url.includes('workers.dev') ||
-     e.request.url.includes('groq.com') ||
-     e.request.method !== 'GET') return;
+  if(e.request.method !== 'GET') return;
 
+  const url = new URL(e.request.url);
+
+  /* app.js و style.css — دايماً من النت (Network First) */
+  if(url.pathname.endsWith('app.js') || url.pathname.endsWith('style.css')){
+    e.respondWith(
+      fetch(e.request).then(res => {
+        const clone = res.clone();
+        caches.open(CACHE).then(c => c.put(e.request, clone));
+        return res;
+      }).catch(() => caches.match(e.request))
+    );
+    return;
+  }
+
+  /* API calls — مش بنكاشهم */
+  if(url.hostname.includes('workers.dev') ||
+     url.hostname.includes('supabase.co') ||
+     url.hostname.includes('groq.com')) return;
+
+  /* باقي الملفات — Cache First */
   e.respondWith(
     caches.match(e.request).then(cached => {
       const network = fetch(e.request).then(res => {
