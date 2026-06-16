@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -32,28 +32,28 @@
     <div id="sb">
       <div class="brand">
         <div class="brand-title">NOS AI</div>
-        <div class="brand-sub">المساعد الذكي — نيشونز أوف سكاي</div>
+        <div class="brand-sub">Smart Assistant — Nations of Sky</div>
         <div class="brand-stat">
-          <span style="color:#3A5A7A;font-size:11px">المستندات</span>
+          <span style="color:#3A5A7A;font-size:11px">Documents</span>
           <span id="kb-count" style="color:#C8A86B;font-size:12px;font-weight:700">0</span>
         </div>
       </div>
 
       <div class="sb-nav">
-        <button class="nb on" id="nav-chat"      onclick="gv('chat')">💬 المحادثة</button>
-        <button class="nb"    id="nav-manage"    onclick="gv('manage')">📚 قاعدة المعرفة</button>
-        <button class="nb"    id="nav-analytics" onclick="gv('analytics')">📊 التحليلات</button>
+        <button class="nb on" id="nav-chat"      onclick="gv('chat')">💬 Chat</button>
+        <button class="nb"    id="nav-manage"    onclick="gv('manage')">📚 Knowledge Base</button>
+        <button class="nb"    id="nav-analytics" onclick="gv('analytics')">📊 Analytics</button>
       </div>
 
       <div id="sb-list"></div>
 
       <div class="sb-foot">
-        <button class="add-btn" onclick="gv('add',true)">+ إضافة محتوى</button>
+        <button class="add-btn" onclick="gv('add',true)">+ Add Content</button>
         <div class="sb-tools">
-          <button class="tool-btn" onclick="exportKb()">📤 تصدير</button>
-          <button class="tool-btn" onclick="document.getElementById('imp-file').click()">📥 استيراد</button>
-          <button class="icon-btn" id="dark-btn" onclick="toggleDark()" title="وضع ليلي">🌙</button>
-          <button class="icon-btn" onclick="resetSetup()" title="إعادة الإعداد">⚙️</button>
+          <button class="tool-btn" onclick="exportKb()">📤 Export</button>
+          <button class="tool-btn" onclick="document.getElementById('imp-file').click()">📥 Import</button>
+          <button class="icon-btn" id="dark-btn" onclick="toggleDark()" title="Dark Mode">🌙</button>
+          <button class="icon-btn" onclick="resetSetup()" title="Settings">⚙️</button>
         </div>
       </div>
       <input id="imp-file" type="file" accept=".json" style="display:none" onchange="importKb(this)">
