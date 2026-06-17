@@ -465,17 +465,40 @@ async function saveItem(){
 
 function clean(text){ return text.replace(/<[^>]*>/g,' ').replace(/&nbsp;/g,' ').replace(/\s+/g,' ').trim(); }
 
-function relevantDocs(q, limit=3){
+/* ── Bilingual keyword map ── */
+const BIMAP = {
+  'site visit':'زيارة الموقع', 'visit':'زيارة', 'collaboration':'تعاون',
+  'assignment':'تنازل', 'transfer':'تنازل نقل', 'cancellation':'إلغاء',
+  'refund':'استرداد', 'contract':'عقد', 'payment':'دفع سداد',
+  'schedule':'جدولة', 'sla':'مستوى الخدمة', 'welcome':'ترحيب',
+  'financial':'مالي', 'checks':'شيكات', 'blacklist':'حجب',
+  'email':'بريد إلكتروني', 'report':'تقرير', 'delay':'تأخير',
+  'eoi':'حجز استمارة', 'upgrade':'أعلى فئة', 'downgrade':'أقل فئة',
+  'تنازل':'assignment transfer', 'إلغاء':'cancellation cancel',
+  'عقد':'contract', 'زيارة':'visit', 'تأخير':'delay',
+};
+
+function relevantDocs(q, limit=5){
   if(!KB.length) return [];
-  const words=q.toLowerCase().split(/[\s،,؟?]+/).filter(w=>w.length>1);
-  const scored=KB.map(k=>{
-    const text=(k.title+' '+clean(k.content)).toLowerCase();
-    const score=words.reduce((s,w)=>s+(text.includes(w)?1:0),0);
-    return {k,score};
+
+  /* expand query with bilingual mapping */
+  let expanded = q.toLowerCase();
+  Object.entries(BIMAP).forEach(([k,v]) => {
+    if(expanded.includes(k)) expanded += ' ' + v;
   });
-  scored.sort((a,b)=>b.score-a.score);
-  const top=scored.slice(0,limit).map(x=>x.k);
-  return top.length&&scored[0].score>0?top:KB.slice(0,2);
+
+  const words = expanded.split(/[\s،,؟?]+/).filter(w=>w.length>1);
+
+  const scored = KB.map(k => {
+    const text = (k.title+' '+clean(k.content)).toLowerCase();
+    let score = 0;
+    words.forEach(w => { if(text.includes(w)) score++; });
+    return {k, score};
+  });
+
+  scored.sort((a,b) => b.score-a.score);
+  const top = scored.filter(x=>x.score>0).slice(0,limit).map(x=>x.k);
+  return top.length ? top : KB.slice(0,3);
 }
 
 function trimDoc(text,max=600){ const t=clean(text); return t.length>max?t.slice(0,max)+'…':t; }
@@ -491,42 +514,25 @@ async function doSend(){
 
   sbLog(txt);
 
-  const base = 'أنت مساعد ذكي لشركة Nations of Sky (NOS). أجب بناءً على قاعدة المعرفة التالية فقط. إذا لم تجد المعلومة، قل ذلك صراحةً. استخدم العربية أساساً. كن مختصراً ومفيداً.';
+  const base = `You are a smart assistant for the Nations of Sky (NOS) customer care team.
+RULES:
+- Answer ONLY from the knowledge base provided below.
+- If the answer is not found, say: "This information is not in the knowledge base — please check with your supervisor."
+- Structure answers with clear bullet points.
+- For email templates: always show TO, CC, Subject, and full Body.
+- Be concise but complete.
+- Understand both Arabic and English questions.`;
 
   try {
-    let docs = [];
+    const docs = relevantDocs(txt, 5);
+    const index = KB.map(k=>`[${k.id}] ${k.title}`).join('\n');
 
-    if(KB.length > 0){
-      /* ── الخطوة 1: الـ AI يختار الـ Docs الأكثر صلة ── */
-      const titles = KB.map(k=>`${k.id}: ${k.title} | ${clean(k.content).slice(0,120)}`).join('\n');
-
-      const r1 = await fetch(WORKER_URL, {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({
-          messages:[{role:'user', content:
-            `Question: ${txt}\n\nDocuments (ID: title | content preview):\n${titles}\n\nReturn ONLY a JSON array of the 3-5 most relevant IDs. Example: ["k001","k008"]. Nothing else.`
-          }],
-          system:'You are a document retrieval system. Match the question to relevant documents regardless of language (Arabic/English). Return ONLY a JSON array of IDs. No other text whatsoever.'
-        })
-      });
-      const d1 = await r1.json();
-
-      if(!d1.error && d1.text){
-        try {
-          const match = d1.text.match(/\[[\s\S]*?\]/);
-          if(match) docs = KB.filter(k => JSON.parse(match[0]).includes(k.id));
-        } catch(e){}
-      }
-
-      /* fallback: keyword matching */
-      if(!docs.length) docs = relevantDocs(txt, 5);
-    }
-
-    /* ── الخطوة 2: السؤال الحقيقي مع السياق المختار ── */
     const ctx = KB.length
-      ? base + '\n\n# قاعدة المعرفة:\n\n'
-        + docs.map((k,i)=>`### [${i+1}] ${k.title}\n${trimDoc(k.content)}`).join('\n\n---\n\n')
-      : base + '\n\nقاعدة المعرفة فارغة حالياً.';
+      ? base
+        + '\n\n# DOCUMENT INDEX:\n' + index
+        + '\n\n# RELEVANT CONTENT:\n\n'
+        + docs.map((k,i)=>`### ${k.title}\n${trimDoc(k.content,800)}`).join('\n\n---\n\n')
+      : base + '\n\nKnowledge base is empty.';
 
     const res = await fetch(WORKER_URL, {
       method:'POST', headers:{'Content-Type':'application/json'},
