@@ -497,16 +497,16 @@ async function doSend(){
     let docs = [];
 
     if(KB.length > 0){
-      /* ── الخطوة 1: الـ AI يختار الـ Docs الأكثر صلة من العناوين ── */
-      const titles = KB.map(k=>`${k.id}: ${k.title}`).join('\n');
+      /* ── الخطوة 1: الـ AI يختار الـ Docs الأكثر صلة ── */
+      const titles = KB.map(k=>`${k.id}: ${k.title} | ${clean(k.content).slice(0,120)}`).join('\n');
 
       const r1 = await fetch(WORKER_URL, {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({
           messages:[{role:'user', content:
-            `Question (may be in Arabic or English): ${txt}\n\nAvailable documents:\n${titles}\n\nReturn ONLY a JSON array with the 3-5 most relevant document IDs. Example: ["k001","k008"]. Nothing else.`
+            `Question: ${txt}\n\nDocuments (ID: title | content preview):\n${titles}\n\nReturn ONLY a JSON array of the 3-5 most relevant IDs. Example: ["k001","k008"]. Nothing else.`
           }],
-          system:'You are a document retrieval system. The question may be in Arabic or English. Match it semantically to the most relevant documents regardless of language. Return ONLY a JSON array of IDs. No other text.'
+          system:'You are a document retrieval system. Match the question to relevant documents regardless of language (Arabic/English). Return ONLY a JSON array of IDs. No other text whatsoever.'
         })
       });
       const d1 = await r1.json();
