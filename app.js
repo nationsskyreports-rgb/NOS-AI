@@ -504,9 +504,9 @@ async function doSend(){
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({
           messages:[{role:'user', content:
-            `السؤال: ${txt}\n\nالمستندات المتاحة:\n${titles}\n\nأعطني IDs الـ 3 الأكثر صلة فقط كـ JSON array. لا تكتب أي شيء آخر.`
+            `Question (may be in Arabic or English): ${txt}\n\nAvailable documents:\n${titles}\n\nReturn ONLY a JSON array with the 3-5 most relevant document IDs. Example: ["k001","k008"]. Nothing else.`
           }],
-          system:'أنت نظام اختيار مستندات. أجب فقط بـ JSON array من IDs. مثال: ["k001","k008"]. لا كلام إضافي.'
+          system:'You are a document retrieval system. The question may be in Arabic or English. Match it semantically to the most relevant documents regardless of language. Return ONLY a JSON array of IDs. No other text.'
         })
       });
       const d1 = await r1.json();
@@ -518,8 +518,8 @@ async function doSend(){
         } catch(e){}
       }
 
-      /* fallback للـ keyword matching لو فشل الـ AI */
-      if(!docs.length) docs = relevantDocs(txt);
+      /* fallback: keyword matching */
+      if(!docs.length) docs = relevantDocs(txt, 5);
     }
 
     /* ── الخطوة 2: السؤال الحقيقي مع السياق المختار ── */
