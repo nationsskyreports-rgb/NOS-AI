@@ -223,12 +223,12 @@ function rChat(el){
               <div style="font-size:11px;color:var(--sub-text);margin-bottom:10px;">Common Questions 👇</div>
               <div style="display:flex;flex-direction:column;gap:8px;">
                 ${[
-                  'What documents are required for an assignment?',
-                  'What is the SLA for each request type?',
+                  'What documents are required for an assignment (تنازل)?',
+                  'What is the SLA priority for each request type (P1/P2/P3/P4)?',
                   'What are the procedures for contract cancellation and refund?',
                   'What are the fees for issuing a new contract?',
                   'What are the check replacement procedures?',
-                  'How does a client request a site visit?'
+                  'How does a client request a site visit (زيارة الموقع)?'
                 ].map(q=>`
                   <button onclick="sendQuick('${q}')" style="
                     background:var(--card-bg);border:1.5px solid var(--card-border);
@@ -467,15 +467,33 @@ function clean(text){ return text.replace(/<[^>]*>/g,' ').replace(/&nbsp;/g,' ')
 
 /* ── Bilingual keyword map ── */
 const BIMAP = {
-  'site visit':'زيارة الموقع', 'visit':'زيارة', 'collaboration':'تعاون',
-  'assignment':'تنازل', 'transfer':'تنازل نقل', 'cancellation':'إلغاء',
-  'refund':'استرداد', 'contract':'عقد', 'payment':'دفع سداد',
-  'schedule':'جدولة', 'sla':'مستوى الخدمة', 'welcome':'ترحيب',
-  'financial':'مالي', 'checks':'شيكات', 'blacklist':'حجب',
-  'email':'بريد إلكتروني', 'report':'تقرير', 'delay':'تأخير',
-  'eoi':'حجز استمارة', 'upgrade':'أعلى فئة', 'downgrade':'أقل فئة',
-  'تنازل':'assignment transfer', 'إلغاء':'cancellation cancel',
-  'عقد':'contract', 'زيارة':'visit', 'تأخير':'delay',
+  // English → Arabic
+  'site visit':'زيارة الموقع', 'visit':'زيارة',
+  'collaboration':'تعاون', 'collaborate':'تعاون',
+  'assignment':'تنازل نقل ملكية', 'transfer':'تنازل نقل',
+  'cancellation':'إلغاء', 'cancel':'إلغاء',
+  'refund':'استرداد', 'contract':'عقد',
+  'payment':'دفع سداد شيك', 'checks':'شيكات',
+  'schedule':'جدولة', 'reschedule':'إعادة جدولة',
+  'sla':'مستوى الخدمة أولوية', 'priority':'أولوية',
+  'welcome':'ترحيب', 'financial':'مالي مالية',
+  'blacklist':'حجب', 'email':'بريد إلكتروني',
+  'report':'تقرير', 'delay':'تأخير تأخر',
+  'eoi':'حجز استمارة', 'upgrade':'أعلى فئة',
+  'downgrade':'أقل فئة', 'unit':'وحدة',
+  'documents':'مستندات وثائق', 'required':'مطلوب مطلوبة',
+  'checklist':'قائمة مراجعة', 'request':'طلب',
+  'buyer':'مشتري', 'owner':'مالك',
+  'fees':'رسوم', 'fees':'رسوم إدارية',
+  'data':'بيانات', 'update':'تحديث',
+  'new contract':'عقد جديد إصدار',
+  'welcome call':'مكالمة ترحيب',
+  // Arabic → English
+  'تنازل':'assignment transfer', 'إلغاء':'cancellation',
+  'عقد':'contract', 'زيارة':'visit',
+  'تأخير':'delay', 'مستندات':'documents required',
+  'أولوية':'priority sla', 'وحدة':'unit',
+  'شيكات':'checks payment', 'رسوم':'fees',
 };
 
 function relevantDocs(q, limit=5){
@@ -501,7 +519,7 @@ function relevantDocs(q, limit=5){
   return top.length ? top : KB.slice(0,3);
 }
 
-function trimDoc(text,max=600){ const t=clean(text); return t.length>max?t.slice(0,max)+'…':t; }
+function trimDoc(text,max=1000){ const t=clean(text); return t.length>max?t.slice(0,max)+'…':t; }
 
 async function doSend(){
   const inp = document.getElementById('chat-inp');
